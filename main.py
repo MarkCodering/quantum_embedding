@@ -13,8 +13,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
 batch_size = 64
-learning_rate = 0.05
-num_epochs = 10
+learning_rate = 0.1
+num_epochs = 100
 
 # Load CIFAR-10 dataset
 transform = transforms.Compose([
