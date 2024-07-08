@@ -12,8 +12,8 @@ from pennylane import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
-batch_size = 32
-learning_rate = 3e-4
+batch_size = 64
+learning_rate = 0.05
 num_epochs = 10
 
 # Load CIFAR-10 dataset
@@ -34,15 +34,14 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=Fa
 np.random.seed(42)
 
 # Define the quantum circuit
-n_qubits = 10
-n_layers = 2
-dev = qml.device("default.qubit", wires=n_qubits)
+n_qubits = 6
+n_layers = 12
+dev = qml.device("lightning.gpu", wires=n_qubits)
 
 @qml.qnode(dev, interface="torch")
 def quantum_neural_network(inputs, weights):
     # Encoding layer
-    for i in range(n_qubits):
-        qml.RY(inputs[i], wires=i)
+    qml.templates.AngleEmbedding(inputs, wires=range(n_qubits))
     
     # Variational layer
     BasicEntanglerLayers(weights, wires=range(n_qubits))
@@ -57,11 +56,11 @@ class QuantumNeuralNetwork(nn.Module):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.n_weights = n_layers * n_qubits
-        self.weights = nn.Parameter(2 * np.pi * torch.rand(self.n_layers, self.n_qubits))
+        self.weights = nn.Parameter(2 * np.pi * torch.rand(self.n_layers, self.n_qubits)).to(device)
     
     def forward(self, x):
         # Apply the quantum neural network to each element of the input batch
-        out = torch.stack([torch.tensor(quantum_neural_network(x[i], self.weights), dtype=torch.float32) for i in range(len(x))])
+        out = torch.stack([torch.tensor(quantum_neural_network(x[i], self.weights), dtype=torch.float32) for i in range(len(x))]).to(device)
         return out
     
 # Define the hybrid quantum-classical neural network
